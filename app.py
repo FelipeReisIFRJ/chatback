@@ -1,72 +1,70 @@
-import os 
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
+import os
 from langchain.document_loaders import PyPDFLoader
-from openai.exceptions import Timeout, APIError, APIConnectionError, RateLimitError
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
+from langchain.llms import OpenAI
 import streamlit as st
 
-# Function to create retry decorator for OpenAI API calls
-def _create_retry_decorator(embeddings):
-    return retry(
-        stop=stop_after_attempt(embeddings.max_retries),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=(
-            retry_if_exception_type(Timeout)
-            | retry_if_exception_type(APIError)
-            | retry_if_exception_type(APIConnectionError)
-            | retry_if_exception_type(RateLimitError)
-        ),
-    )
+# Configurar chave da API da OpenAI via secrets do Streamlit
+openai_api_key = st.secrets["OPENAI_API_KEY"]
+os.environ["OPENAI_API_KEY"] = openai_api_key
 
-# Function to set up the FAISS vector store
+# Carregar o PDF
 @st.cache_resource
-def setup_vectorstore(documents):
-    try:
-        embeddings = OpenAIEmbeddings()
-        vectorstore = FAISS.from_texts(documents, embeddings)
-        return vectorstore
-    except Exception as e:
-        st.error(f"Error setting up vector store: {e}")
-        raise
-
-# Load PDF content
 def load_pdf(file_path):
-    try:
-        loader = PyPDFLoader(file_path)
-        pages = loader.load_and_split()
-        return [page.page_content for page in pages]
-    except Exception as e:
-        st.error(f"Error loading PDF: {e}")
-        raise
+    loader = PyPDFLoader(file_path)
+    pages = loader.load_and_split()
+    return pages
 
-# Main Streamlit application
-def main():
-    st.title("Document Search App with OpenAI and FAISS")
+# Processar o PDF e criar vetorização
+@st.cache_resource
+def process_documents(pages):
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    documents = text_splitter.split_documents(pages)
+    embeddings = OpenAIEmbeddings()
+    vectorstore = FAISS.from_documents(documents, embeddings)
+    return vectorstore
 
-    # File upload
-    uploaded_file = st.file_uploader("Upload a PDF file", type="pdf")
-    if uploaded_file:
-        with open("temp.pdf", "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        st.success("File uploaded successfully!")
+# Inicializar o vetor de recuperação
+file_path = "backpainseries.pdf"  # Nome do arquivo no mesmo diretório
+pages = load_pdf(file_path)
+vectorstore = process_documents(pages)
 
-        # Load and process PDF
-        st.info("Processing PDF...")
-        documents = load_pdf("temp.pdf")
-        vectorstore = setup_vectorstore(documents)
+# Configurar LLM
+llm = OpenAI(temperature=0)
 
-        # Search functionality
-        query = st.text_input("Enter your search query:")
-        if query:
-            st.info("Searching...")
-            try:
-                results = vectorstore.similarity_search(query, k=5)
-                for i, result in enumerate(results):
-                    st.subheader(f"Result {i+1}")
-                    st.write(result.page_content)
-            except Exception as e:
-                st.error(f"Error during search: {e}")
+# Configurar o prompt personalizado
+prompt_template = """
+Você é um assistente virtual especializado em fornecer respostas baseadas em recomendações atuais sobre dor lombar.
+Use apenas as informações fornecidas no seguinte contexto para responder de forma objetiva e sucinta em português.
+Se não houver informações suficientes no contexto para responder à pergunta, diga "Não sei responder à pergunta com base no contexto disponível."
 
-if __name__ == "__main__":
-    main()
+Contexto: {context}
+
+Pergunta: {question}
+
+Resposta:
+"""
+prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
+
+# Criar a cadeia de perguntas e respostas
+qa_chain = RetrievalQA.from_chain_type(
+    llm=llm,
+    retriever=vectorstore.as_retriever(),
+    return_source_documents=False  # Ajustável
+)
+
+# Configurar a interface do Streamlit
+st.title("ChatBack: Tire suas dúvidas sobre Dor Lombar")
+st.write("Bem-vindo! Faça perguntas baseadas nas recomendações atuais.")
+
+# Campo de texto para entrada do usuário
+query = st.text_input("Digite sua pergunta:")
+
+if query:
+    result = qa_chain({"query": query})
+    st.markdown(f"**Pergunta:** {query}")
+    st.markdown(f"**Resposta:** {result['result']}")
