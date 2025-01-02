@@ -46,7 +46,7 @@ chatbot_chain = RetrievalQA.from_chain_type(
 )
 
 # Configurar o Streamlit
-st.title("ChatBack: Tire suas dúvidas sobre dor lombar")
+st.title("ChatBack: Informações sobre Dor Lombar")
 
 # Interface do Chatbot
 if "history" not in st.session_state:
