@@ -17,7 +17,7 @@ from langchain.chains import RetrievalQA
 from langchain.llms import OpenAI
 
 # Configurar chave da API da OpenAI
-os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI"]["API_KEY"]
 
 # Carregar o documento PDF
 def load_pdf():
