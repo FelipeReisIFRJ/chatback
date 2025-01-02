@@ -1,27 +1,6 @@
-# Streamlit para interface do usuário
-streamlit==1.41.1
-
-# LangChain para pipelines de IA
-langchain==0.0.275
-
-# OpenAI para embeddings e modelos LLM
-openai==1.58.1
-
-# PDF manipulação e parsing
-pypdf==5.1.0
-
-# FAISS para armazenamento de vetores
-faiss-cpu==1.9.0.post1
-
-# Tiktoken para tokenização com OpenAI
-tiktoken==0.8.0
-
-# Utilitários de manipulação de dados
-pandas==2.2.3
-numpy==1.26.4
-
-# Utilitário para comunicação com APIs
-httpx==0.28.1
-
-# Tratamento de erros em tentativas repetidas
-tenacity==8.5.0
+streamlit
+langchain
+openai
+faiss-cpu
+pypdf
+tiktoken
