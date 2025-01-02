@@ -1,1 +1,5 @@
-requirements.txtstreamlit langchain openai pypdf faiss-cpu
+streamlit
+langchain==0.0.275
+openai
+pypdf
+faiss-cpu
