@@ -21,9 +21,9 @@ def load_pdf(file_path):
 
 # Processar o PDF e criar vetorização
 @st.cache_resource
-def process_documents(pages):
+def process_documents(_pages):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    documents = text_splitter.split_documents(pages)
+    documents = text_splitter.split_documents(_pages)
     embeddings = OpenAIEmbeddings()
     vectorstore = FAISS.from_documents(documents, embeddings)
     return vectorstore
