@@ -22,7 +22,7 @@ def load_pdf(file_path):
 # Processar o PDF e criar vetorização
 @st.cache_resource
 def process_documents(_pages):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=300)
     documents = text_splitter.split_documents(_pages)
     embeddings = OpenAIEmbeddings()
     vectorstore = FAISS.from_documents(documents, embeddings)
@@ -38,9 +38,10 @@ llm = OpenAI(temperature=0)
 
 # Configurar o prompt personalizado
 prompt_template = """
-Você é um assistente virtual especializado em fornecer respostas baseadas em recomendações atuais sobre dor lombar extraídas do documento em pdf.
-Use apenas as informações fornecidas no seguinte contexto para responder de forma objetiva e sucinta em português.
-Se não houver informações suficientes no contexto para responder à pergunta, diga "Não sei responder à pergunta com base no contexto disponível."
+Você é um assistente virtual altamente preciso e confiável. Sua tarefa é responder perguntas baseadas exclusivamente no seguinte contexto extraído de um documento em PDF.
+Se a pergunta não puder ser respondida com base no contexto abaixo, diga:
+"Não sei responder à pergunta com base no contexto disponível."
+Não faça suposições ou invente informações.
 
 Contexto: {context}
 
