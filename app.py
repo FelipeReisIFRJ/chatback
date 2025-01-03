@@ -39,6 +39,7 @@ llm = OpenAI(temperature=0)
 # Configurar o prompt personalizado
 prompt_template = """
 Você é um assistente virtual altamente preciso e confiável. Sua tarefa é responder perguntas baseadas exclusivamente no seguinte contexto extraído de um documento em PDF.
+Responda no mesmo idioma que a pergunta foi feita. 
 Se a pergunta não puder ser respondida com base no contexto abaixo, diga:
 "Não sei responder à pergunta com base no contexto disponível."
 Não faça suposições ou invente informações.
