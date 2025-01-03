@@ -7,6 +7,7 @@ from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAI
 import streamlit as st
+from langdetect import detect  # Biblioteca para detectar idioma
 
 # Configurar chave da API da OpenAI via secrets do Streamlit
 openai_api_key = st.secrets["OPENAI_API_KEY"]
@@ -36,8 +37,8 @@ vectorstore = process_documents(pages)
 # Configurar LLM
 llm = OpenAI(temperature=0)
 
-# Configurar o prompt personalizado
-prompt_template = """
+# Prompts personalizados
+prompt_pt = """
 Você é um assistente virtual altamente preciso e confiável. Sua tarefa é responder perguntas baseadas exclusivamente no seguinte contexto extraído de um documento em PDF.
 Se a pergunta não puder ser respondida com base no contexto abaixo, diga:
 "Não sei responder à pergunta com base no contexto disponível."
@@ -49,14 +50,29 @@ Pergunta: {question}
 
 Resposta:
 """
-prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
 
-# Criar a cadeia de perguntas e respostas
-qa_chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    retriever=vectorstore.as_retriever(),
-    return_source_documents=False  # Ajustável
-)
+prompt_en = """
+You are a highly accurate and reliable virtual assistant. Your task is to answer questions exclusively based on the following context extracted from a PDF document.
+If the question cannot be answered based on the context below, say:
+"I cannot answer the question based on the available context."
+Do not make assumptions or invent information.
+
+Context: {context}
+
+Question: {question}
+
+Answer:
+"""
+
+# Função para selecionar o prompt com base no idioma da pergunta
+def select_prompt(question):
+    lang = detect(question)
+    if lang == "pt":
+        return PromptTemplate(input_variables=["context", "question"], template=prompt_pt)
+    elif lang == "en":
+        return PromptTemplate(input_variables=["context", "question"], template=prompt_en)
+    else:
+        return None  # Caso o idioma não seja detectável
 
 # Configurar a interface do Streamlit
 st.title("ChatBack")
@@ -66,6 +82,17 @@ st.write("Olá! Conheça as principais diretrizes sobre a dor lombar.")
 query = st.text_input("Digite sua pergunta:")
 
 if query:
-    result = qa_chain({"query": query})
-    st.markdown(f"**Pergunta:** {query}")
-    st.markdown(f"**Resposta:** {result['result']}")
+    prompt = select_prompt(query)
+    if prompt is None:
+        st.markdown("Desculpe, não consegui detectar o idioma da pergunta.")
+    else:
+        # Criar a cadeia de perguntas e respostas com o prompt selecionado
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm,
+            retriever=vectorstore.as_retriever(),
+            chain_type_kwargs={"prompt": prompt},
+            return_source_documents=False
+        )
+        result = qa_chain({"query": query})
+        st.markdown(f"**Pergunta:** {query}")
+        st.markdown(f"**Resposta:** {result['result']}")
