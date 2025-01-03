@@ -36,7 +36,7 @@ vectorstore = process_documents(pages)
 # Configurar LLM
 llm = OpenAI(temperature=0)
 
-# Configurar o prompt personalizado
+# Prompt multilíngue
 prompt_template = """
 Você é um assistente virtual altamente preciso e confiável. Sua tarefa é responder perguntas baseadas exclusivamente no seguinte contexto extraído de um documento em PDF.
 Responda na mesma língua que a pergunta foi feita. 
@@ -52,11 +52,12 @@ Resposta:
 """
 prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
 
-# Criar a cadeia de perguntas e respostas
+# Criar a cadeia de perguntas e respostas com o prompt multilíngue
 qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
     retriever=vectorstore.as_retriever(),
-    return_source_documents=False  # Ajustável
+    chain_type_kwargs={"prompt": prompt},
+    return_source_documents=False
 )
 
 # Configurar a interface do Streamlit
