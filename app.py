@@ -58,8 +58,8 @@ qa_chain = RetrievalQA.from_chain_type(
 )
 
 # Configurar a interface do Streamlit
-st.title("ChatBack: Tire suas dúvidas sobre Dor Lombar")
-st.write("Olá! Vou ajudar você a conhecer mais sobre dor lombar.")
+st.title("ChatBack")
+st.write("Olá! Conheça as principais diretrizes sobre a dor lombar.")
 
 # Campo de texto para entrada do usuário
 query = st.text_input("Digite sua pergunta:")
