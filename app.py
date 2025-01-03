@@ -29,7 +29,7 @@ def process_documents(_pages):
     return vectorstore
 
 # Inicializar o vetor de recuperação
-file_path = "backpainseries.pdf"  # Nome do arquivo no mesmo diretório
+file_path = "backpainguide.pdf"  # Nome do arquivo no mesmo diretório
 pages = load_pdf(file_path)
 vectorstore = process_documents(pages)
 
@@ -38,7 +38,7 @@ llm = OpenAI(temperature=0)
 
 # Configurar o prompt personalizado
 prompt_template = """
-Você é um assistente virtual especializado em fornecer respostas baseadas em recomendações atuais sobre dor lombar.
+Você é um assistente virtual especializado em fornecer respostas baseadas em recomendações atuais sobre dor lombar extraídas do documento em pdf.
 Use apenas as informações fornecidas no seguinte contexto para responder de forma objetiva e sucinta em português.
 Se não houver informações suficientes no contexto para responder à pergunta, diga "Não sei responder à pergunta com base no contexto disponível."
 
