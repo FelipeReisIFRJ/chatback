@@ -36,10 +36,10 @@ vectorstore = process_documents(pages)
 # Configurar LLM
 llm = OpenAI(temperature=0)
 
-# Prompt multilíngue
-prompt_template = """
+# Prompts personalizados
+prompt_pt = """
 Você é um assistente virtual altamente preciso e confiável. Sua tarefa é responder perguntas baseadas exclusivamente no seguinte contexto extraído de um documento em PDF.
-Responda na mesma língua que a pergunta foi feita. 
+Responda em português. 
 Se a pergunta não puder ser respondida com base no contexto abaixo, diga:
 "Não sei responder à pergunta com base no contexto disponível."
 Não faça suposições ou invente informações.
@@ -50,24 +50,47 @@ Pergunta: {question}
 
 Resposta:
 """
-prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
 
-# Criar a cadeia de perguntas e respostas com o prompt multilíngue
-qa_chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    retriever=vectorstore.as_retriever(),
-    chain_type_kwargs={"prompt": prompt},
-    return_source_documents=False
-)
+prompt_en = """
+You are a highly accurate and reliable virtual assistant. Your task is to answer questions exclusively based on the following context extracted from a PDF document.
+Respond in English. 
+If the question cannot be answered based on the context below, say:
+"I cannot answer the question based on the available context."
+Do not make assumptions or invent information.
+
+Context: {context}
+
+Question: {question}
+
+Answer:
+"""
 
 # Configurar a interface do Streamlit
 st.title("ChatBack")
-st.write("Olá! Conheça as principais diretrizes sobre a dor lombar.")
+st.write("Bem-vindo! Conheça as principais diretrizes sobre a dor lombar.")
+
+# Seleção do idioma
+lang = st.radio("Selecione o idioma:", ["Português", "English"])
+
+# Selecionar o prompt com base no idioma escolhido
+if lang == "Português":
+    prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_pt)
+elif lang == "English":
+    prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_en)
+else:
+    prompt = None
 
 # Campo de texto para entrada do usuário
 query = st.text_input("Digite sua pergunta:")
 
-if query:
+if query and prompt:
+    # Criar a cadeia de perguntas e respostas com o prompt selecionado
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=llm,
+        retriever=vectorstore.as_retriever(),
+        chain_type_kwargs={"prompt": prompt},
+        return_source_documents=False
+    )
     result = qa_chain({"query": query})
     st.markdown(f"**Pergunta:** {query}")
     st.markdown(f"**Resposta:** {result['result']}")
